@@ -7,7 +7,10 @@ struct MixerView: View {
         VStack(alignment: .leading, spacing: 10) {
             masterRow
             Divider()
-            if model.showsPermissionBanner {
+            if model.isPaused {
+                pausedBanner
+                Divider()
+            } else if model.showsPermissionBanner {
                 permissionBanner
                 Divider()
             }
@@ -24,8 +27,8 @@ struct MixerView: View {
             Divider()
             HStack {
                 if model.liveChannelCount > 0 {
-                    Button("Release all taps") { model.releaseAllTaps() }
-                        .help("Stop adjusting every app until permission is re-checked. Apps return to full volume.")
+                    Button("Pause all adjustments") { model.pauseAllAdjustments() }
+                        .help("Stop adjusting every app. Apps return to full volume; your settings are kept until you resume.")
                 }
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
@@ -35,6 +38,19 @@ struct MixerView: View {
         }
         .padding(12)
         .frame(width: 340)
+    }
+
+    private var pausedBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "pause.circle.fill").foregroundStyle(.secondary)
+            Text("Adjustments paused. Apps play at full volume.")
+                .font(.caption).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            Button("Resume") { model.resumeAdjustments() }
+                .controlSize(.small)
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.12)))
     }
 
     private var permissionBanner: some View {
@@ -125,5 +141,10 @@ struct AppRowView: View {
             .buttonStyle(.plain)
             .foregroundStyle(row.isMuted ? .red : .primary)
         }
+        // While paused or without permission the controls would save a value
+        // that does nothing, so grey the whole row out instead.
+        .disabled(!model.adjustmentsEnabled)
+        .opacity(model.adjustmentsEnabled ? 1 : 0.45)
+        .help(model.adjustmentsEnabled ? "" : (model.isPaused ? "Adjustments are paused. Press Resume to apply saved volumes." : "Per-app volume needs System Audio Recording permission."))
     }
 }

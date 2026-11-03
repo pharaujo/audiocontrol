@@ -9,6 +9,9 @@ import MixerCore
 public final class PermissionManager {
     public private(set) var gate = PermissionGate()
     public var state: PermissionState { gate.state }
+    /// True when the user paused adjustments while permission was fine.
+    /// A pause whose permission later turned out to be denied reads as denied.
+    public var isPausedByUser: Bool { gate.state == .released && gate.releasedFrom == .granted }
     public var allowsChannels: Bool { gate.allowsChannels }
     public let usesSPI: Bool
     public var onChange: (() -> Void)?
@@ -64,10 +67,11 @@ public final class PermissionManager {
         }
     }
 
-    /// "Release all taps": sticky until a check lifts it per the gate rules.
-    public func releaseAllTaps() {
+    /// "Pause all adjustments": removes every tap, sticky until a check lifts
+    /// it per the gate rules ("Resume" is a user-initiated check).
+    public func pauseAllAdjustments() {
         gate.release()
-        Log.permission.notice("release all taps (from \(String(describing: self.gate.releasedFrom), privacy: .public))")
+        Log.permission.notice("pause all adjustments (from \(String(describing: self.gate.releasedFrom), privacy: .public))")
         push()
     }
 

@@ -80,6 +80,9 @@ Sources/AudioControl   SwiftUI MenuBarExtra shell and view model
   Replacement (device change, helper membership change) builds the new tap
   before destroying the old one so a muted app never bursts.
 - **Master volume** uses the default output device's volume/mute properties.
+- **Pause all adjustments** (footer, shown while any app is adjusted) removes
+  every tap so all apps play at full volume, and keeps your saved settings.
+  App rows are greyed out while paused; **Resume** in the banner re-applies them.
 
 ## Known limitations
 

@@ -39,13 +39,17 @@ final class MixerViewModel {
     private(set) var liveChannelCount = 0
     private(set) var permissionState: PermissionState = .unknown
     private(set) var permissionUsesSPI = true
+    /// Paused by the user via "Pause all adjustments" (permission is fine).
+    private(set) var isPaused = false
 
-    var showsPermissionBanner: Bool { !permissionState.allowsChannels }
+    /// Per-app sliders and mute buttons only do something in these states.
+    var adjustmentsEnabled: Bool { permissionState.allowsChannels }
+    var showsPermissionBanner: Bool { !permissionState.allowsChannels && !isPaused }
     var permissionBannerText: String {
         switch permissionState {
         case .unknown: return "AudioControl needs System Audio Recording permission to adjust app volumes."
-        case .denied: return "System Audio Recording is off for AudioControl. Per-app volume is disabled; apps play at full volume."
-        case .released: return "All taps released. Apps play at full volume until permission is re-checked."
+        // A pause whose permission later turned out to be off reads as "off".
+        case .denied, .released: return "System Audio Recording is off for AudioControl. Per-app volume is disabled; apps play at full volume."
         case .granted, .assumed: return ""
         }
     }
@@ -123,12 +127,15 @@ final class MixerViewModel {
 
     private func permissionChanged() {
         permissionState = permission.state
+        isPaused = permission.isPausedByUser
         rebuildRows()
     }
 
     func permissionBannerAction() { permission.bannerAction() }
     func checkPermissionAgain() { permission.checkAgain() }
-    func releaseAllTaps() { permission.releaseAllTaps() }
+    func pauseAllAdjustments() { permission.pauseAllAdjustments() }
+    /// User-initiated check: lifts the pause if permission is still granted.
+    func resumeAdjustments() { permission.checkAgain() }
 
     private func outputChanged(_ dev: OutputDeviceMonitor.Device?) {
         outputName = dev?.name ?? "No output"

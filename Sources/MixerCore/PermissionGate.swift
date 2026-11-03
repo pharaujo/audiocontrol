@@ -10,7 +10,7 @@ public enum PermissionState: Equatable, Sendable {
     case assumed
     /// A check saw the grant missing.
     case denied
-    /// User pressed "Release all taps"; gates like `.denied` until lifted.
+    /// User pressed "Pause all adjustments"; gates like `.denied` until lifted.
     case released
 
     /// Whether `.mutedWhenTapped` channels may exist in this state.
@@ -59,7 +59,7 @@ public struct PermissionGate: Equatable, Sendable {
     }
 
     public private(set) var state: PermissionState = .unknown
-    /// State in force when "Release all taps" was pressed, normalised to
+    /// State in force when "Pause all adjustments" was pressed, normalised to
     /// `.granted` or `.denied`. `nil` unless `state == .released`.
     public private(set) var releasedFrom: PermissionState?
     /// Probe path only: one automatic check has passed since a granted-origin
@@ -80,7 +80,7 @@ public struct PermissionGate: Equatable, Sendable {
         state = .assumed
     }
 
-    /// "Release all taps". Sticky until lifted.
+    /// "Pause all adjustments". Sticky until lifted.
     public mutating func release() {
         releasedFrom = (state == .granted) ? .granted : .denied
         state = .released
