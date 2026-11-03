@@ -148,3 +148,7 @@ Still owed:
 
 1. Switch to AirPods (Bluetooth) with an app tapped: audio continues at the
    same gain; a muted app stays silent throughout.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
