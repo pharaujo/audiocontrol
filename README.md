@@ -56,8 +56,14 @@ Permission state is read through the private TCC SPI (`TCCAccessPreflight`
 / `TCCAccessRequest`, loaded with `dlsym`), the same approach as
 insidegui/AudioCap. Personal-use trade-off: a future macOS could remove it.
 Verified on macOS 27.0.1: preflight returns *granted* after the user allows,
-and the system prompt appears on request for an undetermined state. The
-in-process *revoke* transition still needs a manual check (see Verification).
+and the system prompt appears on request for an undetermined state.
+
+**Changes in System Settings apply only after AudioControl restarts.** macOS
+says so when you toggle the switch ("…until it is quit"), and it holds in both
+directions: turning the permission off leaves a running AudioControl able to
+capture, and turning it on leaves a running, denied AudioControl denied
+(preflight keeps returning *denied*). The banner therefore offers
+**Relaunch AudioControl** instead of a re-check.
 
 ## How it works
 
@@ -91,9 +97,11 @@ Sources/AudioControl   SwiftUI MenuBarExtra shell and view model
   ~50–200 ms until the tap includes it. Core Audio cannot mute a process before it
   reports it. Chrome is unaffected in practice (one audio-service helper).
 - Safari and all WebKit apps share one setting.
-- A grant revoked mid-session leaves tapped apps silent for up to ~10 s, until the
-  starvation check re-reads TCC and drops every app to passthrough (or macOS
-  terminates AudioControl, which also restores audio).
+- Turning System Audio Recording off in System Settings does not stop a running
+  AudioControl; adjustments keep working until it quits. Turning it on needs a
+  relaunch (banner button). The starvation check (orange glyph after ~10 s of
+  silence from an app that reports playing) stays as a safety net for paths that
+  bypass System Settings, such as `tccutil reset`.
 - Devices in hog mode cannot join an aggregate; the slider will fail for those.
 - The self-signed certificate buys permission persistence only, not Gatekeeper trust.
 
@@ -118,15 +126,25 @@ Sources/AudioControl   SwiftUI MenuBarExtra shell and view model
   Tools, hold the model as a plain stored property on the `App` struct.
 - `AudioHardwareCreateProcessTap` blocks while the TCC prompt is on screen;
   gating on preflight first avoids freezing the UI.
+- System Audio Recording changes made in System Settings never reach a running
+  process: `TCCAccessPreflight` keeps returning the launch-time answer, and an
+  existing grant keeps working. Only a relaunch picks up the new state.
 
-## Verification still owed by a human ear / hand
+## Verification
 
-1. Play audio in Music and Chrome, drag Chrome to 30%: Chrome quieter, Music
-   unchanged, no click. Mute/unmute. Back to 100%: short gap, tap released.
-2. Revoke System Audio Recording in System Settings **while AudioControl runs**
-   with an app tapped: within ~10 s the row shows the orange glyph, the app
-   returns to full volume and the banner appears. Re-grant and open the popover:
-   the setting re-applies. If instead nothing happens until a relaunch, TCC
-   caches preflight per process; see the plan's probe fallback.
-3. Switch output devices (headphones, AirPods) with an app tapped: audio continues
-   at the same gain; a muted app stays silent throughout.
+Verified by hand on macOS 27.0.1:
+
+- Per-app attenuation and mute (Discord, Firefox, Music), live list updates,
+  quit restores full volume.
+- Pause all adjustments / Resume.
+- Switching output (speakers ↔ wired headphones) with Music tapped keeps its
+  gain, and a muted app stays silent across the switch.
+- Relaunch with permission off: banner shown, rows greyed out, every app at
+  full volume.
+- Turning the permission on, then **Relaunch AudioControl**: one icon returns,
+  the banner is gone and saved volumes apply.
+
+Still owed:
+
+1. Switch to AirPods (Bluetooth) with an app tapped: audio continues at the
+   same gain; a muted app stays silent throughout.

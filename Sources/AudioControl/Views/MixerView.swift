@@ -61,7 +61,10 @@ struct MixerView: View {
             }
             HStack {
                 Button(model.permissionBannerButton) { model.permissionBannerAction() }
-                Button("Check again") { model.checkPermissionAgain() }
+                // macOS applies a permission change to a running process only
+                // after it quits, so a re-check here would always read stale.
+                Button("Relaunch AudioControl") { model.relaunch() }
+                    .help("Quit and reopen AudioControl so macOS applies the permission change.")
                 if !model.permissionUsesSPI {
                     Text("(status unavailable)").font(.caption2).foregroundStyle(.secondary)
                 }

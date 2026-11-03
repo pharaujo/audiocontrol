@@ -49,7 +49,7 @@ final class MixerViewModel {
         switch permissionState {
         case .unknown: return "AudioControl needs System Audio Recording permission to adjust app volumes."
         // A pause whose permission later turned out to be off reads as "off".
-        case .denied, .released: return "System Audio Recording is off for AudioControl. Per-app volume is disabled; apps play at full volume."
+        case .denied, .released: return "System Audio Recording is off for AudioControl, so apps play at full volume. If you just turned it on, macOS applies it after a relaunch."
         case .granted, .assumed: return ""
         }
     }
@@ -132,7 +132,29 @@ final class MixerViewModel {
     }
 
     func permissionBannerAction() { permission.bannerAction() }
-    func checkPermissionAgain() { permission.checkAgain() }
+    /// Start a fresh instance once this one has exited, then quit. A helper
+    /// shell waits for our PID so the two instances never overlap (no second
+    /// menu bar icon, no taps held by both).
+    func relaunch() {
+        let bundle = Bundle.main.bundleURL
+        guard bundle.pathExtension == "app" else {
+            Log.ui.error("relaunch: not running from an app bundle (\(bundle.path, privacy: .public))")
+            return
+        }
+        let pid = ProcessInfo.processInfo.processIdentifier
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = ["-c", "while /bin/kill -0 \"$1\" 2>/dev/null; do /bin/sleep 0.1; done; /usr/bin/open \"$2\"",
+                          "relaunch", String(pid), bundle.path]
+        do {
+            try task.run()
+        } catch {
+            Log.ui.error("relaunch: could not start helper: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        Log.ui.notice("relaunching")
+        NSApplication.shared.terminate(nil)
+    }
     func pauseAllAdjustments() { permission.pauseAllAdjustments() }
     /// User-initiated check: lifts the pause if permission is still granted.
     func resumeAdjustments() { permission.checkAgain() }
