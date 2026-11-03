@@ -1,0 +1,10 @@
+.build/
+build/
+*.p12
+*.pem
+*.key
+*.cer
+*.crt
+.DS_Store
+*.swp
+.swiftpm/
