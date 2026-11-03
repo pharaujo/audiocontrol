@@ -40,6 +40,29 @@ if [[ -x "$BIN_DIR/AudioControlTone" ]]; then
       "$ROOT/Resources/Info.plist.template" > "$TONE/Contents/Info.plist"
 fi
 
+# --- Fix the SDK stamp ------------------------------------------------------
+# SwiftPM 6.4 with Command Line Tools compiles against the current SDK but
+# records the deployment target as the SDK version in LC_BUILD_VERSION.
+# AppKit reads that stamp to decide the app's design generation, so a
+# "sdk 15.0" stamp gets the pre-macOS 26 compatibility look. Rewrite it to
+# the real SDK version, keeping the minimum OS, before signing.
+SDK_VERSION="$(xcrun --show-sdk-version)"
+fix_sdk_stamp() {
+  local bin="$1" minos sdk
+  minos="$(otool -l "$bin" | awk '/LC_BUILD_VERSION/{f=1} f&&/minos/{print $2; exit}')"
+  sdk="$(otool -l "$bin" | awk '/LC_BUILD_VERSION/{f=1} f&&/ sdk /{print $2; exit}')"
+  if [[ "$sdk" != "$SDK_VERSION" ]]; then
+    xcrun vtool -set-build-version macos "$minos" "$SDK_VERSION" -replace -output "$bin.tmp" "$bin"
+    mv "$bin.tmp" "$bin"
+    chmod +x "$bin"
+    echo "    SDK stamp $(basename "$bin"): $sdk -> $SDK_VERSION (minos $minos)"
+  fi
+}
+fix_sdk_stamp "$APP/Contents/MacOS/$APP_NAME"
+if [[ -x "$APP/Contents/Resources/AudioControlTone.app/Contents/MacOS/AudioControlTone" ]]; then
+  fix_sdk_stamp "$APP/Contents/Resources/AudioControlTone.app/Contents/MacOS/AudioControlTone"
+fi
+
 # --- Resolve signing identity to a hash ------------------------------------
 SIGN_WITH="-"
 if [[ "$SIGN_IDENTITY" != "-" ]]; then

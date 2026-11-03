@@ -107,6 +107,10 @@ Sources/AudioControl   SwiftUI MenuBarExtra shell and view model
   in the function-pointer type; TCC calls it later and a non-escaping block traps.
 - The IOProc block must be `@Sendable`. Otherwise, in Swift 6, it inherits the
   creating method's `@MainActor` isolation and traps on Core Audio's IO thread.
+- SwiftPM 6.4 with Command Line Tools stamps the binary with the deployment
+  target as its SDK version (`sdk 15.0`), which makes AppKit use the pre-macOS 26
+  compatibility look. `scripts/build-app.sh` rewrites the stamp with `vtool`
+  before signing; check with `otool -l <binary> | grep -A4 LC_BUILD_VERSION`.
 - SwiftUI's `@State` macro plugin ships only with Xcode. With Command Line
   Tools, hold the model as a plain stored property on the `App` struct.
 - `AudioHardwareCreateProcessTap` blocks while the TCC prompt is on screen;
