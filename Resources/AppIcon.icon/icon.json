@@ -1,0 +1,23 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.27451,0.32157,0.92157,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        { "glass" : true, "image-name" : "knobs.svg", "name" : "knobs" },
+        { "glass" : true, "image-name" : "speaker.svg", "name" : "speaker" }
+      ],
+      "shadow" : { "kind" : "neutral", "opacity" : 0.5 },
+      "translucency" : { "enabled" : true, "value" : 0.4 }
+    },
+    {
+      "layers" : [
+        { "image-name" : "tracks.svg", "name" : "tracks", "opacity" : 0.55 }
+      ]
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [ "macOS" ]
+  }
+}

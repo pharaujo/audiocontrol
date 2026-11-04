@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Speaker body and cone; the round stroke softens the corners. -->
+  <g fill="#ffffff" stroke="#ffffff" stroke-width="36" stroke-linejoin="round">
+    <rect x="168" y="414" width="104" height="196" rx="10"/>
+    <path d="M272 414 L436 286 L436 738 L272 610 Z"/>
+  </g>
+</svg>

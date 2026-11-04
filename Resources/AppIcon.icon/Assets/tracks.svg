@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Fader slots. -->
+  <g fill="#ffffff">
+    <rect x="571" y="286" width="34" height="452" rx="17"/>
+    <rect x="687" y="286" width="34" height="452" rx="17"/>
+    <rect x="803" y="286" width="34" height="452" rx="17"/>
+  </g>
+</svg>

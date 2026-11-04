@@ -13,7 +13,9 @@ latency; adjusted apps gain roughly 10–20 ms.
 ## Requirements
 
 - macOS 15 or later (developed and tested on macOS 27.0.1).
-- Swift 6 toolchain. Command Line Tools are enough; Xcode is not needed.
+- Swift 6 toolchain. Command Line Tools are enough to build and run.
+- Xcode (optional) for the app icon: only its `actool` compiles the Icon
+  Composer bundle. Without Xcode the app builds with the generic icon.
 - Apple silicon or Intel (the build script builds for the host).
 
 ## Build
@@ -33,6 +35,14 @@ is exactly `AudioControl Dev` (override with `SIGN_IDENTITY=...`). If no such
 identity exists it falls back to ad-hoc signing with a warning. Never run the
 bare `swift run` binary for anything involving taps: it has no
 `NSAudioCaptureUsageDescription` and inherits the terminal's TCC attribution.
+
+The app icon lives in `Resources/AppIcon.icon`: an Icon Composer bundle written
+by hand (`icon.json` plus three SVG layers), editable in Icon Composer too. The
+build script compiles it with Xcode's `actool` (found via Spotlight or
+`XCODE_DEV=/path/to/Xcode.app/Contents/Developer`) into `Assets.car` for the
+macOS 26+ layered icon and `AppIcon.icns` for macOS 15. If System Settings keeps
+showing the old icon, re-register the app with
+`/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f build/AudioControl.app`.
 
 Logs:
 

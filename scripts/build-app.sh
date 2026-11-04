@@ -28,6 +28,35 @@ sed -e "s/__BUNDLE_ID__/$BUNDLE_ID/g" \
     -e "s/__APP_NAME__/$APP_NAME/g" \
     "$ROOT/Resources/Info.plist.template" > "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
+
+# --- App icon -----------------------------------------------------------------
+# Resources/AppIcon.icon is an Icon Composer bundle (icon.json + SVG layers),
+# hand-written. Only Xcode's actool compiles it (Command Line Tools lack it), so
+# point DEVELOPER_DIR at Xcode for this one call; the Swift build above keeps
+# using whatever xcode-select says. actool emits Assets.car (macOS 26+ layered
+# icon) and AppIcon.icns (fallback for macOS 15). Without Xcode, skip the icon.
+XCODE_DEV="${XCODE_DEV:-}"
+if [[ -z "$XCODE_DEV" ]]; then
+  XCODE_APP="$(mdfind "kMDItemCFBundleIdentifier == 'com.apple.dt.Xcode'" 2>/dev/null | head -1 || true)"
+  [[ -z "$XCODE_APP" && -d /Applications/Xcode.app ]] && XCODE_APP=/Applications/Xcode.app
+  [[ -n "$XCODE_APP" ]] && XCODE_DEV="$XCODE_APP/Contents/Developer"
+fi
+if [[ -n "$XCODE_DEV" ]] && DEVELOPER_DIR="$XCODE_DEV" xcrun --find actool >/dev/null 2>&1; then
+  echo "==> actool AppIcon.icon"
+  ICON_TMP="$(mktemp -d)"
+  DEVELOPER_DIR="$XCODE_DEV" xcrun actool "$ROOT/Resources/AppIcon.icon" \
+    --compile "$APP/Contents/Resources" --app-icon AppIcon \
+    --platform macosx --target-device mac --minimum-deployment-target 15.0 \
+    --output-partial-info-plist "$ICON_TMP/partial.plist" \
+    --output-format human-readable-text --errors --warnings >"$ICON_TMP/actool.log" 2>&1 \
+    || { cat "$ICON_TMP/actool.log" >&2; exit 1; }
+  grep -iE 'error|warning' "$ICON_TMP/actool.log" | sed 's/^/    /' || true
+  /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" "$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "$APP/Contents/Info.plist"
+  rm -rf "$ICON_TMP"
+else
+  echo "WARNING: Xcode not found; building without an app icon (actool ships only with Xcode)." >&2
+fi
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
 
 # Optional helper bundle (probe fallback A2), only if the target exists.
