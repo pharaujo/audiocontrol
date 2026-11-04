@@ -1,11 +1,15 @@
-<p align="center"><img src="docs/icon.png" width="128" height="128" alt="AudioControl icon"></p>
+<p align="center">
+  <img src="docs/icon.png" width="96" height="96" alt="AudioControl icon">
+</p>
+<h1 align="center">AudioControl</h1>
+<p align="center">Per-app volume and mute for macOS, in the menu bar.</p>
 
-# AudioControl
+<p align="center">
+  <img src="docs/screenshot.png" width="352" alt="AudioControl menu bar panel: output volume, per-app sliders for Discord, FaceTime Audio, Microsoft Teams, Music and System Sounds">
+</p>
 
-Per-app volume and mute for macOS, in the menu bar. Pure Swift, SwiftPM, no
-Xcode project, no drivers, no kernel extensions. Built for personal use.
-
-<p align="center"><img src="docs/screenshot.png" width="352" alt="AudioControl menu bar panel: output volume, per-app sliders for Discord, FaceTime Audio, Microsoft Teams, Music and System Sounds"></p>
+Pure Swift, SwiftPM, no Xcode project, no drivers, no kernel extensions. Built
+for personal use.
 
 <!-- docs/icon.png is a rendered copy of Resources/AppIcon.icon; re-render it if the icon changes. -->
 
