@@ -1,7 +1,13 @@
+<p align="center"><img src="docs/icon.png" width="128" height="128" alt="AudioControl icon"></p>
+
 # AudioControl
 
 Per-app volume and mute for macOS, in the menu bar. Pure Swift, SwiftPM, no
 Xcode project, no drivers, no kernel extensions. Built for personal use.
+
+<p align="center"><img src="docs/screenshot.png" width="352" alt="AudioControl menu bar panel: output volume, per-app sliders for Discord, FaceTime Audio, Microsoft Teams, Music and System Sounds"></p>
+
+<!-- docs/icon.png is a rendered copy of Resources/AppIcon.icon; re-render it if the icon changes. -->
 
 macOS has no API to set another process's gain. AudioControl uses the only
 driver-free route: a **Core Audio process tap** on the app with
