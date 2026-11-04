@@ -109,7 +109,15 @@ struct AppRowView: View {
                 if let icon = row.icon {
                     Image(nsImage: icon).resizable()
                 } else {
-                    Image(systemName: "app.dashed")
+                    // Known system process (its own symbol) or any other process
+                    // with no icon (gear): a symbol on an app-icon-sized tile.
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color.secondary.opacity(0.25))
+                        .overlay {
+                            Image(systemName: row.symbolName ?? "gearshape.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
                 }
             }
             .frame(width: 20, height: 20)

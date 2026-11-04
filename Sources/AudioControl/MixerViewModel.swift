@@ -11,6 +11,8 @@ final class MixerViewModel {
         let key: String
         let name: String
         let icon: NSImage?
+        /// SF Symbol shown on a tile when there is no app icon.
+        let symbolName: String?
         var volume: Float
         var isMuted: Bool
         var isPlaying: Bool
@@ -194,6 +196,7 @@ final class MixerViewModel {
             if !app.isRunningOutput && !recentlyPlayed && saved == nil { continue }
             if !app.isRunningOutput && recentlyPlayed { needLinger = true }
             out.append(AppRow(key: app.key, name: app.name, icon: icon(for: app),
+                              symbolName: app.symbolName,
                               volume: saved?.volume ?? 1, isMuted: saved?.isMuted ?? false,
                               isPlaying: app.isRunningOutput, isWebKit: app.isWebKitGroup,
                               isLive: status.isLive, isStarved: status.isStarved, routingFailed: status.routingFailed))
@@ -209,6 +212,8 @@ final class MixerViewModel {
     }
 
     private func icon(for app: AudioApp) -> NSImage? {
+        // System processes get an SF Symbol tile instead (see AppRowView).
+        if app.symbolName != nil { return nil }
         if let c = iconCache[app.key] { return c }
         var img: NSImage?
         if let url = app.bundleURL { img = NSWorkspace.shared.icon(forFile: url.path) }

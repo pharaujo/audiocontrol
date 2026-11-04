@@ -13,6 +13,9 @@ public struct AudioApp: Identifiable, Equatable, Sendable {
     public let processObjectIDs: [AudioObjectID]
     public let pids: [pid_t]
     public let isRunningOutput: Bool
+    /// SF Symbol for system processes that have no app bundle to take an icon
+    /// from (System Sounds, Power Chime, ...). Nil for regular apps.
+    public var symbolName: String? = nil
     public var id: String { key }
 
     public static let webKitKey = "com.apple.WebKit"
@@ -38,6 +41,15 @@ public final class ProcessDiscovery {
         let key: String
         let name: String
         let bundleURL: URL?
+        var symbolName: String? = nil
+    }
+
+    /// How a known system process is shown: a friendly name, plus either the
+    /// icon of the app it belongs to (by bundle id) or an SF Symbol.
+    struct SystemProcess {
+        let name: String
+        var iconApp: String? = nil
+        var symbol: String? = nil
     }
 
     public init() {
@@ -110,7 +122,8 @@ public final class ProcessDiscovery {
         }
         let newApps = grouped.values.map {
             AudioApp(key: $0.owner.key, name: $0.owner.name, bundleURL: $0.owner.bundleURL,
-                     processObjectIDs: $0.objs.sorted(), pids: $0.pids.sorted(), isRunningOutput: $0.running)
+                     processObjectIDs: $0.objs.sorted(), pids: $0.pids.sorted(), isRunningOutput: $0.running,
+                     symbolName: $0.owner.symbolName)
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
 
         Log.discovery.info("rescan: \(objects.count) process objects, \(newApps.count) groups")
@@ -124,24 +137,30 @@ public final class ProcessDiscovery {
     // MARK: Owner resolution
 
     /// Friendlier names for system daemons that play audio.
-    static let friendlyNames: [String: String] = [
-        "systemsoundserverd": "System Sounds",
-        "com.apple.systemsoundserverd": "System Sounds",
-        "com.apple.assistantd": "Siri",
-        "PowerChime": "Power Chime",
-        "com.apple.PowerChime": "Power Chime",
-        "com.apple.mediaremoted": "Media Remote",
-        "com.apple.avconferenced": "FaceTime Audio",
-        "com.apple.CoreSpeech": "Speech",
-        "com.apple.accessibility.heard": "Accessibility",
-        "callservicesd": "Phone Calls",
-        "com.apple.speech.speechsynthesisd": "Speech Synthesis",
-    ]
+    static let systemProcesses: [String: SystemProcess] = {
+        let sounds = SystemProcess(name: "System Sounds", symbol: "bell.fill")
+        let chime = SystemProcess(name: "Power Chime", symbol: "powerplug.fill")
+        return [
+            "systemsoundserverd": sounds,
+            "com.apple.systemsoundserverd": sounds,
+            "com.apple.assistantd": SystemProcess(name: "Siri", iconApp: "com.apple.Siri", symbol: "siri"),
+            "PowerChime": chime,
+            "com.apple.PowerChime": chime,
+            "com.apple.mediaremoted": SystemProcess(name: "Media Remote", symbol: "playpause.fill"),
+            "com.apple.avconferenced": SystemProcess(name: "FaceTime Audio", iconApp: "com.apple.FaceTime", symbol: "video.fill"),
+            "com.apple.CoreSpeech": SystemProcess(name: "Speech", symbol: "waveform"),
+            "com.apple.accessibility.heard": SystemProcess(name: "Accessibility", symbol: "accessibility"),
+            "callservicesd": SystemProcess(name: "Phone Calls", iconApp: "com.apple.mobilephone", symbol: "phone.fill"),
+            "com.apple.speech.speechsynthesisd": SystemProcess(name: "Speech Synthesis", symbol: "speaker.wave.2.bubble.fill"),
+        ]
+    }()
 
     private func resolveOwner(pid: pid_t, bundleID: String) -> Owner {
         let o = resolveOwnerUncached(pid: pid, bundleID: bundleID)
-        if let friendly = Self.friendlyNames[o.key] ?? Self.friendlyNames[o.name] {
-            return Owner(key: o.key, name: friendly, bundleURL: o.bundleURL)
+        if let sp = Self.systemProcesses[o.key] ?? Self.systemProcesses[o.name] {
+            let appURL = sp.iconApp.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }
+            return Owner(key: o.key, name: sp.name, bundleURL: appURL ?? o.bundleURL,
+                         symbolName: appURL == nil ? sp.symbol : nil)
         }
         return o
     }
