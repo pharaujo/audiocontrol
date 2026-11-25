@@ -109,6 +109,11 @@ Sources/AudioControl   SwiftUI MenuBarExtra shell and view model
 - **Pause all adjustments** (footer, shown while any app is adjusted) removes
   every tap so all apps play at full volume, and keeps your saved settings.
   App rows are greyed out while paused; **Resume** in the banner re-applies them.
+- **Launch at Login** (gear menu in the footer) registers the app bundle with
+  `SMAppService.mainApp`. The checkmark mirrors System Settings > Login Items
+  and is re-read every time the panel opens; nothing is stored in the app. The
+  login item points at the bundle that registered it, so keep the app at a
+  stable path.
 
 ## Known limitations
 

@@ -31,6 +31,7 @@ struct MixerView: View {
                         .help("Stop adjusting every app. Apps return to full volume; your settings are kept until you resume.")
                 }
                 Spacer()
+                settingsMenu
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .keyboardShortcut("q")
             }
@@ -38,6 +39,24 @@ struct MixerView: View {
         }
         .padding(12)
         .frame(width: 340)
+    }
+
+    private var settingsMenu: some View {
+        Menu {
+            Toggle("Launch at Login", isOn: Binding(get: { model.launchAtLogin },
+                                                    set: { model.setLaunchAtLogin($0) }))
+                .disabled(!model.canSetLaunchAtLogin)
+            if model.launchAtLoginNeedsApproval {
+                // Registered, but switched off under Login Items: only the user can turn it back on.
+                Button("Allow in System Settings…") { model.openLoginItemsSettings() }
+            }
+        } label: {
+            Image(systemName: "gearshape")
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Settings")
     }
 
     private var pausedBanner: some View {

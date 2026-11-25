@@ -2,6 +2,7 @@ import AppKit
 import AudioEngine
 import MixerCore
 import Observation
+import ServiceManagement
 import SwiftUI
 
 @MainActor
@@ -61,6 +62,13 @@ final class MixerViewModel {
         default: return "Open System Settings"
         }
     }
+    /// Mirrors the system's login item state (System Settings > Login Items),
+    /// never a stored preference, so the two cannot disagree.
+    private(set) var launchAtLogin = false
+    /// Registered, but the user switched it off in System Settings.
+    private(set) var launchAtLoginNeedsApproval = false
+    /// Login items are registered per app bundle; a bare binary has none.
+    let canSetLaunchAtLogin = Bundle.main.bundleURL.pathExtension == "app"
     private var lastSeenPlaying: [String: Date] = [:]
     private var lingerTimer: Timer?
     private var iconCache: [String: NSImage] = [:]
@@ -86,6 +94,7 @@ final class MixerViewModel {
         rebuildRows()
         permission.checkAtLaunch()
         permissionChanged()
+        readLaunchAtLogin()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.logStatusItemPlacement() }
 
         let nc = NotificationCenter.default
@@ -125,7 +134,28 @@ final class MixerViewModel {
         lastPopoverOpen = now
         Log.ui.debug("popover opened")
         permission.popoverOpened()
+        // The user may have changed it in System Settings since the last open.
+        readLaunchAtLogin()
     }
+
+    private func readLaunchAtLogin() {
+        guard canSetLaunchAtLogin else { return }
+        let status = SMAppService.mainApp.status
+        launchAtLogin = status == .enabled || status == .requiresApproval
+        launchAtLoginNeedsApproval = status == .requiresApproval
+    }
+
+    func setLaunchAtLogin(_ on: Bool) {
+        do {
+            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+            Log.ui.notice("launch at login \(on ? "registered" : "unregistered", privacy: .public)")
+        } catch {
+            Log.ui.error("launch at login \(on ? "register" : "unregister", privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+        }
+        readLaunchAtLogin()
+    }
+
+    func openLoginItemsSettings() { SMAppService.openSystemSettingsLoginItems() }
 
     private func permissionChanged() {
         permissionState = permission.state
